@@ -1,95 +1,87 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useState, useEffect } from 'react';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-cpu';
+import '@tensorflow/tfjs-backend-webgl';
+import Link from 'next/link';
+import styles from './page.module.css';
 
-export default function Home() {
+function Page() {
+  const [model, setModel] = useState(null);
+  const [inputs, setInputs] = useState({ sepalLength: '', sepalWidth: '', petalLength: '', petalWidth: '' });
+  const [prediction, setPrediction] = useState(null);
+
+  useEffect(() => {
+    async function loadModel() {
+      const modelUrl = `${window.location.origin}/model/model.json`;
+      const model = await tf.loadLayersModel(modelUrl);
+      setModel(model);
+      console.log('Modelo cargado');
+    }
+    loadModel();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setInputs({ ...inputs, [name]: value });
+  };
+
+  const handlePredict = async () => {
+    if (model) {
+      const inputTensor = tf.tensor2d([[parseFloat(inputs.sepalLength), parseFloat(inputs.sepalWidth), parseFloat(inputs.petalLength), parseFloat(inputs.petalWidth)]]);
+      const predictionTensor = model.predict(inputTensor);
+      const predictionArray = await predictionTensor.array();
+      const predictedClassIndex = predictionArray[0].indexOf(Math.max(...predictionArray[0]));
+      const classNames = ["setosa", "versicolor", "virginica"];
+      setPrediction(classNames[predictedClassIndex]);
+    }
+  };
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
+    <div>
+    <h1>Iris Plant Classification</h1>
+    <div className={styles.card}>
+      <label>
+       Sepal length:
+       <br/>
+      <br/>
+        <input type="number" name="sepalLength" value={inputs.sepalLength} onChange={handleInputChange} />
+      </label>
+      <label>
+      Sepal width:
+      <br/>
+      <br/>
+        <input type="number" name="sepalWidth" value={inputs.sepalWidth} onChange={handleInputChange} />
+      </label>
+      <label>
+      Petal length:
+      <br/>
+      <br/>
+        <input type="number" name="petalLength" value={inputs.petalLength} onChange={handleInputChange} />
+      </label>
+      <label>
+      Petal width:
+      <br/>
+      <br/>
+      
+        <input type="number" name="petalWidth" value={inputs.petalWidth} onChange={handleInputChange} />
+      </label>
+      <button onClick={handlePredict}>Classify Prediction</button>
+      {prediction && (
         <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+          <h3>Result:</h3>
+          <h2>Iris {prediction}</h2>
         </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      )}
+    </div>
+    <div className="project-github">
+      <p>This project is in </p>
+      <Link href="https://github.com/diegoperea20">
+        <img width="96" height="96" src="https://img.icons8.com/fluency/96/github.png" alt="github"/>
+      </Link>
+    </div>
+  </div>
   );
 }
+
+export default Page;
